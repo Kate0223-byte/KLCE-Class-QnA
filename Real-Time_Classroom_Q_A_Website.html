@@ -1,0 +1,2887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="artifact-type" content="tool">
+  <meta name="design-style" content="carbon">
+  <title>ClassPulse — Real-Time Classroom Q&amp;A Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,100..700;1,100..700&family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@1.43.0/dist/umd/lucide.min.js"></script>
+  <style>
+    :root {
+      color-scheme: light;
+
+      /* 1. Carbon Style Tokens */
+      --background: #ffffff;
+      --surface-container-low: #f4f4f4;
+      --surface-container: #f4f4f4;
+      --surface-container-high: #e0e0e0;
+
+      --on-surface: #161616;
+      --on-surface-variant: #525252;
+
+      --outline: #8d8d8d;
+      --outline-variant: #e0e0e0;
+
+      --primary: #0f62fe;
+      --primary-hover: #0353e9;
+      --on-primary: #ffffff;
+      --primary-container: #d0e2ff;
+      --on-primary-container: #161616;
+      --secondary: #6f6f6f;
+      --tertiary: #198038;
+      --error: #da1e28;
+      --on-error: #ffffff;
+
+      --data-1: #0f62fe;
+      --data-2: #6929c4;
+      --data-3: #005d5d;
+      --data-4: #9f1853;
+      --data-context: #8d8d8d;
+
+      --font-headline: 'IBM Plex Sans', sans-serif;
+      --font-body: 'IBM Plex Sans', sans-serif;
+      --font-label: 'IBM Plex Mono', monospace;
+
+      --rounded: 0.125rem;
+      --rounded-lg: 0.25rem;
+      --rounded-full: 0.75rem;
+
+      --shadow-1: 0 2px 6px rgb(0 0 0 / 0.1);
+      --shadow-2: 0 4px 12px rgb(0 0 0 / 0.12);
+      --rule: 1px solid var(--outline-variant);
+      --field-rule: 1px solid var(--outline);
+      --indicator: 2px solid var(--primary);
+      --indicator-strong: 3px solid var(--primary);
+      --status-bar-ok: 3px solid var(--tertiary);
+      --status-bar-err: 3px solid var(--error);
+      --status-bar-warn: 3px solid var(--warning);
+
+      /* 2. Shared Tokens */
+      --positive: #198038;
+      --warning: #b28600;
+      --focus: #0f62fe;
+
+      /* Type Scale — Tool / Dashboard */
+      --display-size: clamp(1.75rem, 1.4rem + 1.2vw, 2.25rem);
+      --headline-size: clamp(1.25rem, 1.1rem + 0.5vw, 1.5rem);
+      --subhead-size: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
+      --body-size: clamp(0.9375rem, 0.9rem + 0.15vw, 1rem);
+      --label-size: 0.75rem;
+
+      /* Spacing Scale (4pt base) */
+      --space-xs: 0.25rem;
+      --space-sm: 0.5rem;
+      --space-md: 1rem;
+      --space-lg: 1.5rem;
+      --space-xl: 2.5rem;
+      --space-2xl: 4rem;
+      --space-3xl: 6rem;
+
+      /* Motion */
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+      --dur-micro: 120ms;
+      --dur-short: 220ms;
+      --dur-long: 420ms;
+    }
+
+    /* Base Reset */
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      overflow-x: clip;
+      margin: 0;
+      padding: 0;
+      background-color: var(--background);
+      color: var(--on-surface);
+      font-family: var(--font-body);
+      font-size: var(--body-size);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    header { position: static !important; }
+
+    button, input, select, textarea {
+      font-family: inherit;
+      font-size: inherit;
+      color: inherit;
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    .page-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-lg);
+      padding: var(--space-lg);
+      max-width: 1440px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+    .page-grid * { min-width: 0; }
+
+    /* Typography */
+    .headline {
+      font-family: var(--font-headline);
+      font-weight: 300;
+      letter-spacing: 0;
+      line-height: 1.2;
+      margin: 0;
+    }
+    .headline strong { font-weight: 600; }
+
+    h1.headline { font-size: var(--display-size); }
+    h2.headline { font-size: var(--headline-size); }
+    h3.section-title {
+      font-family: var(--font-headline);
+      font-weight: 600;
+      font-size: var(--subhead-size);
+      line-height: 1.25;
+      margin: 0;
+    }
+
+    .label {
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--on-surface-variant);
+      display: block;
+    }
+
+    .key-value {
+      font-family: var(--font-label);
+      font-weight: 300;
+      font-size: 2rem;
+      line-height: 1.15;
+      color: var(--on-surface);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .helper-text {
+      font-size: 0.8125rem;
+      color: var(--on-surface-variant);
+      margin: 0;
+    }
+
+    .mono {
+      font-family: var(--font-label);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Carbon Layers & Rules */
+    .layer {
+      background: var(--surface-container);
+      border-radius: 0;
+      padding: var(--space-md);
+    }
+    .layer .layer {
+      background: var(--surface-container-high);
+    }
+    .layer-white {
+      background: var(--background);
+      border: var(--rule);
+      border-radius: 0;
+      padding: var(--space-md);
+    }
+
+    .section-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: var(--space-sm);
+      border-bottom: var(--rule);
+      padding-bottom: var(--space-sm);
+      margin-bottom: var(--space-md);
+    }
+
+    /* Header & Mode Switcher */
+    .app-header {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+      border-bottom: var(--rule);
+      padding-bottom: var(--space-md);
+    }
+
+    .header-top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: var(--space-md);
+    }
+
+    .header-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    .mode-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: stretch;
+      justify-content: space-between;
+      gap: var(--space-md);
+      background: var(--surface-container);
+      padding: 0 var(--space-md);
+      border-bottom: var(--rule);
+    }
+
+    .mode-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-xs);
+    }
+
+    .mode-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-sm);
+      min-height: 44px;
+      padding: var(--space-sm) var(--space-md);
+      background: transparent;
+      border: 0;
+      border-bottom: 2px solid transparent;
+      font-family: var(--font-body);
+      font-size: var(--body-size);
+      font-weight: 400;
+      color: var(--on-surface-variant);
+      cursor: pointer;
+      transition: background-color var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out);
+    }
+    .mode-tab:hover {
+      background: var(--surface-container-high);
+      color: var(--on-surface);
+    }
+    .mode-tab.is-active {
+      border-bottom: var(--indicator);
+      font-weight: 600;
+      color: var(--on-surface);
+    }
+
+    .mode-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-sm);
+      padding-block: var(--space-xs);
+    }
+
+    /* Buttons (Carbon square corners, >=44px touch target) */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: var(--space-sm);
+      min-height: 44px;
+      padding: var(--space-sm) var(--space-lg) var(--space-sm) var(--space-md);
+      border-radius: 0;
+      border: 1px solid transparent;
+      font-family: var(--font-body);
+      font-size: 0.9375rem;
+      font-weight: 400;
+      line-height: 1.2;
+      cursor: pointer;
+      text-align: left;
+      transition: background-color var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out), border-color var(--dur-micro) var(--ease-out);
+    }
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn-compact {
+      min-height: 44px;
+      padding: var(--space-xs) var(--space-md);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: var(--on-primary);
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background: var(--background);
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+    .btn-secondary:hover:not(:disabled) {
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+    }
+
+    .btn-neutral {
+      background: var(--surface-container);
+      color: var(--on-surface);
+      border-color: var(--outline);
+    }
+    .btn-neutral:hover:not(:disabled) {
+      background: var(--surface-container-high);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--primary);
+      padding-inline: var(--space-sm);
+    }
+    .btn-ghost:hover:not(:disabled) {
+      background: var(--surface-container);
+    }
+
+    .btn-danger-ghost {
+      background: transparent;
+      color: var(--error);
+      padding-inline: var(--space-sm);
+    }
+    .btn-danger-ghost:hover:not(:disabled) {
+      background: var(--surface-container);
+    }
+
+    /* Inputs & Fields */
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+    }
+
+    .field-label {
+      font-family: var(--font-body);
+      font-size: var(--label-size);
+      font-weight: 500;
+      color: var(--on-surface-variant);
+    }
+
+    .input-control,
+    .select-control,
+    .textarea-control {
+      width: 100%;
+      min-height: 44px;
+      background: var(--surface-container);
+      border: 0;
+      border-bottom: var(--field-rule);
+      border-radius: 0;
+      padding: var(--space-sm) var(--space-md);
+      color: var(--on-surface);
+      font-size: var(--body-size);
+      transition: background-color var(--dur-micro) var(--ease-out);
+    }
+    .layer .input-control,
+    .layer .select-control,
+    .layer .textarea-control {
+      background: var(--background);
+    }
+
+    .select-control {
+      padding-right: var(--space-xl);
+      cursor: pointer;
+    }
+
+    .textarea-control {
+      min-height: 84px;
+      resize: vertical;
+    }
+
+    .input-control.is-error,
+    .select-control.is-error,
+    .textarea-control.is-error {
+      border-bottom: 2px solid var(--error);
+    }
+
+    .field-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: var(--space-sm);
+    }
+
+    /* Tags & Status Indicators */
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      height: 24px;
+      padding: 0 var(--space-sm);
+      border-radius: var(--rounded-full);
+      font-family: var(--font-body);
+      font-size: var(--label-size);
+      font-weight: 500;
+      white-space: nowrap;
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+    }
+    .tag-neutral {
+      background: var(--surface-container-high);
+      color: var(--on-surface);
+    }
+
+    .status-text-ok {
+      color: var(--tertiary);
+      font-weight: 600;
+    }
+    .status-text-err {
+      color: var(--error);
+      font-weight: 600;
+    }
+    .status-text-neutral {
+      color: var(--on-surface-variant);
+      font-weight: 500;
+    }
+
+    /* Notifications */
+    .notice {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-sm);
+      background: var(--surface-container);
+      padding: var(--space-md);
+      border-left: var(--indicator-strong);
+    }
+    .notice-ok { border-left: var(--status-bar-ok); }
+    .notice-err { border-left: var(--status-bar-err); }
+    .notice-warn { border-left: var(--status-bar-warn); }
+
+    .notice-icon {
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .notice-ok .notice-icon { color: var(--tertiary); }
+    .notice-err .notice-icon { color: var(--error); }
+    .notice-warn .notice-icon { color: var(--warning); }
+    .notice-info .notice-icon { color: var(--primary); }
+
+    /* Workspace Layout */
+    .workspace-shell {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-lg);
+      align-items: start;
+    }
+    .workspace-shell.is-dual {
+      grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+    }
+
+    .teacher-pane,
+    .student-pane {
+      container-type: inline-size;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-lg);
+    }
+
+    .hidden-pane {
+      display: none !important;
+    }
+
+    /* KPI Strip */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--space-sm);
+    }
+    @container (max-width: 720px) {
+      .kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+    @container (max-width: 380px) {
+      .kpi-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .kpi-tile {
+      background: var(--surface-container);
+      padding: var(--space-md);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+    }
+    .kpi-tile.key-tile {
+      border-bottom: var(--indicator);
+    }
+
+    /* Class Switcher & Creator */
+    .class-bar {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto;
+      gap: var(--space-md);
+      align-items: end;
+    }
+    @container (max-width: 680px) {
+      .class-bar {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .code-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-sm);
+      min-height: 44px;
+      background: var(--background);
+      border-bottom: var(--field-rule);
+      padding: var(--space-xs) var(--space-sm) var(--space-xs) var(--space-md);
+    }
+    .code-value {
+      font-family: var(--font-label);
+      font-size: 1.125rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      color: var(--on-surface);
+    }
+
+    .inline-drawer {
+      background: var(--surface-container);
+      border-top: var(--indicator);
+      padding: var(--space-md);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+
+    .form-grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-md);
+    }
+    @container (max-width: 560px) {
+      .form-grid-2 {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    /* Teacher Sub-Layout: Composer + Question Queue */
+    .teacher-tools-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+      gap: var(--space-md);
+      align-items: start;
+    }
+    @container (max-width: 780px) {
+      .teacher-tools-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .option-editor-row {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: var(--space-sm);
+      align-items: center;
+    }
+
+    .key-radio-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 44px;
+      min-height: 44px;
+      background: var(--background);
+      border: 1px solid var(--outline);
+      cursor: pointer;
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      font-weight: 600;
+      color: var(--on-surface);
+    }
+    .key-radio-btn.is-selected {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: var(--on-primary);
+    }
+
+    .question-list {
+      display: flex;
+      flex-direction: column;
+    }
+    .question-item {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+      padding: var(--space-md) 0;
+      border-top: var(--rule);
+    }
+    .question-item:first-child {
+      border-top: 0;
+      padding-top: 0;
+    }
+    .question-item.is-live {
+      background: var(--background);
+      padding: var(--space-md);
+      border-left: var(--indicator-strong);
+      border-top: 0;
+      margin-bottom: var(--space-xs);
+    }
+
+    /* Distribution Bars */
+    .dist-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 56px;
+      gap: var(--space-sm);
+      align-items: center;
+      margin-top: var(--space-xs);
+    }
+    .dist-track {
+      height: 18px;
+      background: var(--surface-container-high);
+      position: relative;
+      overflow: hidden;
+    }
+    .dist-fill {
+      height: 100%;
+      background: var(--data-context);
+      transition: width var(--dur-short) var(--ease-out);
+    }
+    .dist-fill.is-correct {
+      background: var(--tertiary);
+    }
+    .dist-fill.is-focal {
+      background: var(--data-1);
+    }
+
+    /* Single-View Teacher Dashboard Table */
+    .table-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-md);
+    }
+    .table-filter-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-sm);
+      align-items: flex-end;
+      flex: 1 1 320px;
+    }
+
+    .table-scroll {
+      width: 100%;
+      overflow-x: auto;
+      border-top: var(--rule);
+      border-bottom: var(--rule);
+    }
+
+    table.grade-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 680px;
+      text-align: left;
+    }
+    table.grade-table thead th {
+      background: var(--surface-container-high);
+      color: var(--on-surface);
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: var(--space-sm) var(--space-md);
+      border-bottom: var(--rule);
+      white-space: nowrap;
+    }
+    table.grade-table thead th.num-col,
+    table.grade-table tbody td.num-col {
+      text-align: right;
+    }
+    table.grade-table tbody tr {
+      background: var(--background);
+      border-top: var(--rule);
+    }
+    table.grade-table tbody tr:nth-child(even) {
+      background: var(--surface-container);
+    }
+    table.grade-table tbody tr.is-selected-student {
+      background: var(--primary-container);
+    }
+    table.grade-table tbody td {
+      padding: var(--space-sm) var(--space-md);
+      vertical-align: middle;
+      font-size: 0.9375rem;
+    }
+
+    .q-strip {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: var(--space-xs);
+      margin-top: var(--space-xs);
+    }
+    .q-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      font-family: var(--font-label);
+      font-size: 0.6875rem;
+      padding: 2px 6px;
+      background: var(--surface-container-high);
+      color: var(--on-surface);
+    }
+    .q-chip.is-ok {
+      border-bottom: 2px solid var(--tertiary);
+    }
+    .q-chip.is-err {
+      border-bottom: 2px solid var(--error);
+    }
+
+    .override-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      min-height: 44px;
+      padding: var(--space-xs) var(--space-sm);
+      background: var(--background);
+      border: 1px solid var(--outline);
+      border-radius: 0;
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background-color var(--dur-micro) var(--ease-out);
+    }
+    .override-btn:hover {
+      background: var(--surface-container-high);
+    }
+    .override-btn.is-overridden {
+      border-color: var(--primary);
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+    }
+
+    /* Student Pane & Device Frame */
+    .student-pane-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-sm);
+      border-bottom: var(--rule);
+      padding-bottom: var(--space-sm);
+    }
+
+    .device-frame {
+      background: var(--background);
+      border: var(--rule);
+      padding: var(--space-md);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+      transition: max-width var(--dur-short) var(--ease-out);
+    }
+    .device-frame.is-mobile-sim {
+      max-width: 390px;
+      width: 100%;
+      margin-inline: auto;
+      border: 2px solid var(--on-surface);
+      padding: var(--space-md);
+    }
+
+    .device-status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-sm);
+      padding-bottom: var(--space-xs);
+      border-bottom: var(--rule);
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      color: var(--on-surface-variant);
+    }
+
+    .student-session-switcher {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-xs);
+      align-items: center;
+    }
+
+    .seat-pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+      padding: 0 var(--space-sm);
+      background: var(--surface-container);
+      border: 0;
+      border-bottom: 2px solid transparent;
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      cursor: pointer;
+      color: var(--on-surface-variant);
+    }
+    .seat-pill.is-active {
+      border-bottom: var(--indicator);
+      color: var(--on-surface);
+      font-weight: 600;
+    }
+
+    .answer-choice-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+    }
+
+    .answer-choice-btn {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      width: 100%;
+      min-height: 48px;
+      padding: var(--space-sm) var(--space-md);
+      background: var(--surface-container);
+      border: 1px solid transparent;
+      border-left: 3px solid transparent;
+      text-align: left;
+      cursor: pointer;
+      transition: background-color var(--dur-micro) var(--ease-out);
+    }
+    .answer-choice-btn:hover:not(:disabled) {
+      background: var(--surface-container-high);
+    }
+    .answer-choice-btn.is-selected {
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+      border-left: var(--indicator-strong);
+      font-weight: 600;
+    }
+    .answer-choice-btn:disabled {
+      cursor: default;
+    }
+
+    .choice-letter {
+      font-family: var(--font-label);
+      font-weight: 600;
+      font-size: var(--label-size);
+      min-width: 24px;
+      height: 24px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--background);
+      border: 1px solid var(--outline);
+      color: var(--on-surface);
+      flex-shrink: 0;
+    }
+    .answer-choice-btn.is-selected .choice-letter {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: var(--on-primary);
+    }
+
+    .student-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-sm);
+    }
+    @container (max-width: 340px) {
+      .student-stats-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+    }
+    .history-item {
+      padding: var(--space-sm) 0;
+      border-top: var(--rule);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+    }
+    .history-item:first-child {
+      border-top: 0;
+    }
+
+    /* Toast Feedback */
+    .toast-region {
+      position: fixed;
+      bottom: var(--space-lg);
+      right: var(--space-lg);
+      z-index: 40;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+      max-width: 360px;
+      pointer-events: none;
+    }
+    .toast-card {
+      pointer-events: auto;
+      background: var(--background);
+      border: var(--rule);
+      border-left: var(--indicator-strong);
+      box-shadow: var(--shadow-2);
+      padding: var(--space-sm) var(--space-md);
+      font-size: 0.875rem;
+      color: var(--on-surface);
+    }
+
+    /* Source Footer */
+    .sources-note {
+      border-top: var(--rule);
+      padding-top: var(--space-md);
+      color: var(--on-surface-variant);
+      font-size: 0.8125rem;
+    }
+
+    /* Mobile Page-Level Breakpoint */
+    @media (max-width: 960px) {
+      .workspace-shell.is-dual {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+    @media (max-width: 640px) {
+      .page-grid {
+        padding: var(--space-sm);
+        gap: var(--space-md);
+      }
+      .mode-bar {
+        padding: 0 var(--space-sm);
+      }
+      .mode-tab {
+        flex: 1 1 auto;
+        justify-content: center;
+      }
+      .toast-region {
+        left: var(--space-sm);
+        right: var(--space-sm);
+        bottom: var(--space-sm);
+        max-width: none;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-grid">
+    <!-- App Header -->
+    <header class="app-header">
+      <div class="header-top">
+        <div>
+          <span class="label">Analytical Chemistry Classroom Response System</span>
+          <h1 class="headline">ClassPulse <strong>Live Q&amp;A</strong></h1>
+          <p class="helper-text">Real-time question broadcasting, automated grading keys, manual score overrides, and side-by-side student device simulation.</p>
+        </div>
+        <div class="header-meta">
+          <span class="tag" id="header-active-class-tag">Active: TITR84</span>
+          <span class="tag tag-neutral" id="header-sync-status">Sync Ready</span>
+          <button type="button" class="btn btn-compact btn-danger-ghost" id="btn-reset-demo" onclick="handleResetDemo(this)">
+            <i data-lucide="rotate-ccw" width="16" height="16" aria-hidden="true"></i>
+            Reset Demo
+          </button>
+        </div>
+      </div>
+
+      <!-- Integrated Dual-View / Device Simulation Toggle Bar -->
+      <nav class="mode-bar" aria-label="Workspace perspective toggle">
+        <div class="mode-tabs" role="tablist">
+          <button type="button" role="tab" id="tab-dual" class="mode-tab is-active" aria-selected="true" onclick="setWorkspaceMode('dual')">
+            <i data-lucide="columns-2" width="18" height="18" aria-hidden="true"></i>
+            Dual-View Live Simulator
+          </button>
+          <button type="button" role="tab" id="tab-teacher" class="mode-tab" aria-selected="false" onclick="setWorkspaceMode('teacher')">
+            <i data-lucide="layout-dashboard" width="18" height="18" aria-hidden="true"></i>
+            Teacher Console
+          </button>
+          <button type="button" role="tab" id="tab-student" class="mode-tab" aria-selected="false" onclick="setWorkspaceMode('student')">
+            <i data-lucide="smartphone" width="18" height="18" aria-hidden="true"></i>
+            Student View
+          </button>
+        </div>
+        <div class="mode-actions">
+          <button type="button" class="btn btn-compact btn-ghost" id="btn-toggle-device-frame" onclick="toggleStudentDeviceFrame()">
+            <i data-lucide="tablet-smartphone" width="16" height="16" aria-hidden="true"></i>
+            <span id="device-frame-label">Phone Frame: On (390px)</span>
+          </button>
+        </div>
+      </nav>
+    </header>
+
+    <!-- Main Dual / Single Workspace -->
+    <main class="workspace-shell is-dual" id="workspace-shell">
+      <!-- ==================== TEACHER VIEW ==================== -->
+      <section class="teacher-pane" id="teacher-pane" aria-label="Teacher Console">
+        <!-- Class Switcher & Unique Join Code -->
+        <div class="layer">
+          <div class="section-head">
+            <div>
+              <span class="label">Class Management</span>
+              <h2 class="headline">Active <strong>Classroom</strong></h2>
+            </div>
+            <button type="button" class="btn btn-compact btn-secondary" id="btn-toggle-new-class" onclick="toggleNewClassDrawer()">
+              <i data-lucide="plus" width="16" height="16" aria-hidden="true"></i>
+              New Class
+            </button>
+          </div>
+
+          <div class="class-bar">
+            <div class="field-group">
+              <label for="select-teacher-class" class="field-label">Switch Active Class</label>
+              <select id="select-teacher-class" class="select-control" onchange="switchTeacherClass(this.value)"></select>
+            </div>
+
+            <div class="field-group">
+              <span class="field-label">Unique Class Join Code</span>
+              <div class="code-box">
+                <span class="code-value" id="teacher-join-code">TITR84</span>
+                <button type="button" class="btn btn-compact btn-ghost" id="btn-copy-code" onclick="copyActiveJoinCode()">
+                  <i data-lucide="copy" width="15" height="15" aria-hidden="true"></i>
+                  <span id="copy-code-text">Copy</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <span class="field-label">Quick Test</span>
+              <button type="button" class="btn btn-compact btn-neutral" onclick="quickFillStudentCode()">
+                <i data-lucide="arrow-right" width="15" height="15" aria-hidden="true"></i>
+                Send Code to Student
+              </button>
+            </div>
+          </div>
+
+          <!-- Inline New Class Creator Drawer -->
+          <div class="inline-drawer hidden-pane" id="new-class-drawer" style="margin-top: var(--space-md);">
+            <div class="section-head" style="margin-bottom: 0;">
+              <div>
+                <span class="label">Create Class</span>
+                <h3 class="section-title">Register a New Class Session</h3>
+              </div>
+              <button type="button" class="btn btn-compact btn-ghost" onclick="toggleNewClassDrawer(false)">Close</button>
+            </div>
+            <div class="form-grid-2">
+              <div class="field-group">
+                <label for="input-new-class-name" class="field-label">Class Name (required)</label>
+                <input type="text" id="input-new-class-name" class="input-control" placeholder="e.g., CHEM 210 — Chromatography Lab">
+              </div>
+              <div class="field-group">
+                <label for="input-new-class-code" class="field-label">Join Code (6 chars, auto-generated)</label>
+                <div class="field-row">
+                  <input type="text" id="input-new-class-code" class="input-control mono" maxlength="8" style="flex: 1 1 140px; text-transform: uppercase;">
+                  <button type="button" class="btn btn-compact btn-neutral" onclick="regenerateNewClassCode()">Regenerate</button>
+                </div>
+              </div>
+            </div>
+            <p class="helper-text status-text-err hidden-pane" id="new-class-error"></p>
+            <div class="field-row">
+              <button type="button" class="btn btn-primary" onclick="createNewClass()">Create &amp; Switch Class</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- KPI Summary Tiles -->
+        <div class="kpi-grid" aria-label="Class Summary Metrics">
+          <div class="kpi-tile key-tile">
+            <span class="label">Live Responses</span>
+            <span class="key-value" id="kpi-live-responses">0 / 0</span>
+            <p class="helper-text" id="kpi-live-caption">Active question participation</p>
+          </div>
+          <div class="kpi-tile">
+            <span class="label">Class Accuracy</span>
+            <span class="key-value" id="kpi-accuracy">—</span>
+            <p class="helper-text">Includes manual overrides</p>
+          </div>
+          <div class="kpi-tile">
+            <span class="label">Total Interactions</span>
+            <span class="key-value" id="kpi-interactions">0</span>
+            <p class="helper-text">Submitted answers in class</p>
+          </div>
+          <div class="kpi-tile">
+            <span class="label">Joined Students</span>
+            <span class="key-value" id="kpi-students">0</span>
+            <p class="helper-text" id="kpi-questions-count">0 questions in bank</p>
+          </div>
+        </div>
+
+        <!-- Question Composer & Live Queue -->
+        <div class="teacher-tools-grid">
+          <!-- Post New Question with Auto-Grading Answer Key -->
+          <div class="layer">
+            <div class="section-head">
+              <div>
+                <span class="label">Question Authoring</span>
+                <h2 class="headline">Post <strong>Live Question</strong></h2>
+              </div>
+            </div>
+
+            <div class="field-group" style="margin-bottom: var(--space-md);">
+              <label for="input-q-prompt" class="field-label">Question Prompt</label>
+              <textarea id="input-q-prompt" class="textarea-control" placeholder="e.g., Which factor lowers Relative Supersaturation (Q - S) / S during gravimetric precipitation?"></textarea>
+            </div>
+
+            <div class="form-grid-2" style="margin-bottom: var(--space-md);">
+              <div class="field-group">
+                <label for="select-q-type" class="field-label">Question Type</label>
+                <select id="select-q-type" class="select-control" onchange="handleQuestionTypeChange()">
+                  <option value="mcq">Multiple Choice (Auto-Graded)</option>
+                  <option value="short">Short Answer / Numeric Key</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label for="input-q-points" class="field-label">Point Value</label>
+                <input type="number" id="input-q-points" class="input-control mono" min="1" max="100" value="10">
+              </div>
+            </div>
+
+            <!-- MCQ Options Editor -->
+            <div id="composer-mcq-area" style="display: flex; flex-direction: column; gap: var(--space-sm); margin-bottom: var(--space-md);">
+              <span class="field-label">Answer Choices — Click letter to set the Auto-Grading Answer Key</span>
+              <div class="option-editor-row">
+                <button type="button" class="key-radio-btn is-selected" id="key-btn-0" onclick="selectComposerMcqKey(0)" title="Mark Option A as correct answer">A</button>
+                <input type="text" id="input-opt-0" class="input-control" aria-label="Option A text" placeholder="Option A">
+              </div>
+              <div class="option-editor-row">
+                <button type="button" class="key-radio-btn" id="key-btn-1" onclick="selectComposerMcqKey(1)" title="Mark Option B as correct answer">B</button>
+                <input type="text" id="input-opt-1" class="input-control" aria-label="Option B text" placeholder="Option B">
+              </div>
+              <div class="option-editor-row">
+                <button type="button" class="key-radio-btn" id="key-btn-2" onclick="selectComposerMcqKey(2)" title="Mark Option C as correct answer">C</button>
+                <input type="text" id="input-opt-2" class="input-control" aria-label="Option C text" placeholder="Option C (optional)">
+              </div>
+              <div class="option-editor-row">
+                <button type="button" class="key-radio-btn" id="key-btn-3" onclick="selectComposerMcqKey(3)" title="Mark Option D as correct answer">D</button>
+                <input type="text" id="input-opt-3" class="input-control" aria-label="Option D text" placeholder="Option D (optional)">
+              </div>
+            </div>
+
+            <!-- Short Answer Key Editor -->
+            <div id="composer-short-area" class="hidden-pane" style="margin-bottom: var(--space-md);">
+              <div class="field-group">
+                <label for="input-short-key" class="field-label">Accepted Answer Key (comma-separate valid equivalents, case-insensitive)</label>
+                <input type="text" id="input-short-key" class="input-control mono" placeholder="e.g., tapping mode, tapping">
+              </div>
+            </div>
+
+            <div class="field-group" style="margin-bottom: var(--space-md);">
+              <label for="input-q-explanation" class="field-label">Feedback Explanation (shown to student after answering)</label>
+              <input type="text" id="input-q-explanation" class="input-control" placeholder="Brief rationale or formula reference">
+            </div>
+
+            <p class="helper-text status-text-err hidden-pane" id="composer-error" style="margin-bottom: var(--space-sm);"></p>
+
+            <div class="field-row">
+              <button type="button" class="btn btn-primary" onclick="publishQuestion(true)">
+                <i data-lucide="radio" width="16" height="16" aria-hidden="true"></i>
+                Post Live Now
+              </button>
+              <button type="button" class="btn btn-secondary" onclick="publishQuestion(false)">
+                Save to Bank
+              </button>
+            </div>
+          </div>
+
+          <!-- Question Bank & Live Broadcast Control -->
+          <div class="layer">
+            <div class="section-head">
+              <div>
+                <span class="label">Broadcast Control</span>
+                <h2 class="headline">Question <strong>Queue</strong></h2>
+              </div>
+              <span class="tag tag-neutral mono" id="live-status-pill">0 Live</span>
+            </div>
+
+            <div id="live-dist-panel" class="layer-white" style="margin-bottom: var(--space-md);"></div>
+            <div class="question-list" id="teacher-question-list"></div>
+          </div>
+        </div>
+
+        <!-- Single-View Teacher Dashboard Table -->
+        <div class="layer-white">
+          <div class="section-head">
+            <div>
+              <span class="label">Single-View Gradebook &amp; Live Monitor</span>
+              <h2 class="headline">Student <strong>Responses &amp; Overrides</strong></h2>
+            </div>
+            <div class="field-row">
+              <button type="button" class="btn btn-compact btn-neutral" onclick="populateSimulatedCohort()">
+                <i data-lucide="users" width="15" height="15" aria-hidden="true"></i>
+                Simulate 4 Sample Students
+              </button>
+              <button type="button" class="btn btn-compact btn-secondary" onclick="exportClassCsv()">
+                <i data-lucide="download" width="15" height="15" aria-hidden="true"></i>
+                Export CSV
+              </button>
+            </div>
+          </div>
+
+          <div class="table-controls">
+            <div class="table-filter-group">
+              <div class="field-group" style="flex: 1 1 220px;">
+                <label for="select-inspect-question" class="field-label">Inspect Question Column</label>
+                <select id="select-inspect-question" class="select-control" onchange="setInspectedQuestion(this.value)"></select>
+              </div>
+              <div class="field-group" style="flex: 1 1 180px;">
+                <label for="input-student-search" class="field-label">Filter Student</label>
+                <input type="text" id="input-student-search" class="input-control" placeholder="Search name..." oninput="setStudentSearch(this.value)">
+              </div>
+              <div class="field-group" style="flex: 0 1 160px;">
+                <label for="select-status-filter" class="field-label">Verdict Filter</label>
+                <select id="select-status-filter" class="select-control" onchange="setStatusFilter(this.value)">
+                  <option value="all">All Students</option>
+                  <option value="correct">Correct</option>
+                  <option value="incorrect">Incorrect</option>
+                  <option value="overridden">Manual Override</option>
+                  <option value="pending">Unanswered</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div id="teacher-table-container"></div>
+        </div>
+      </section>
+
+      <!-- ==================== STUDENT VIEW ==================== -->
+      <aside class="student-pane" id="student-pane" aria-label="Student Device View">
+        <div class="layer">
+          <div class="student-pane-header">
+            <div>
+              <span class="label">Live Student Perspective</span>
+              <h2 class="headline">Student <strong>Portal</strong></h2>
+            </div>
+            <div class="student-session-switcher" id="student-session-switcher"></div>
+          </div>
+
+          <!-- Simulated Mobile / Web Device Frame -->
+          <div class="device-frame is-mobile-sim" id="student-device-frame" style="margin-top: var(--space-md);">
+            <div class="device-status-bar">
+              <span id="sim-viewport-badge">SIM DEVICE · 390px</span>
+              <span id="sim-connection-badge">READY</span>
+            </div>
+
+            <!-- Join View OR Active Student Classroom View -->
+            <div id="student-join-panel" class="hidden-pane" style="display:flex; flex-direction:column; gap:var(--space-md);">
+              <div>
+                <span class="label">Join Live Session</span>
+                <h3 class="section-title" style="margin-top: var(--space-xs);">Enter Class Code &amp; Name</h3>
+                <p class="helper-text" style="margin-top: var(--space-xs);">Available active codes:</p>
+                <div id="student-code-chips" style="display:flex; flex-wrap:wrap; gap:var(--space-xs); margin-top:var(--space-xs);"></div>
+              </div>
+              <div class="field-group">
+                <label for="input-student-join-code" class="field-label">Class Join Code</label>
+                <input type="text" id="input-student-join-code" class="input-control mono" style="text-transform:uppercase;" placeholder="e.g. TITR84">
+              </div>
+              <div class="field-group">
+                <label for="input-student-name" class="field-label">Your Name</label>
+                <input type="text" id="input-student-name" class="input-control" placeholder="e.g. Alex Rivera">
+              </div>
+              <p class="helper-text status-text-err hidden-pane" id="student-join-error"></p>
+              <button type="button" class="btn btn-primary" style="width:100%;" onclick="joinStudentClass()">
+                <i data-lucide="log-in" width="16" height="16" aria-hidden="true"></i> Join Classroom
+              </button>
+            </div>
+
+            <div id="student-active-panel" class="hidden-pane" style="display:flex; flex-direction:column; gap:var(--space-md);">
+              <div id="student-header-card"></div>
+              <div id="student-stats-container"></div>
+              <div id="student-live-question-shell">
+                <div id="student-live-question-meta"></div>
+                <div id="student-mcq-container" class="hidden-pane"></div>
+                <div id="student-short-container" class="hidden-pane">
+                  <div class="field-group">
+                    <label for="input-student-short-answer" class="field-label">Your Answer</label>
+                    <input type="text" id="input-student-short-answer" class="input-control" oninput="updateStudentShortDraft(this.value)" placeholder="Enter value or term">
+                  </div>
+                </div>
+                <p class="helper-text status-text-err hidden-pane" id="student-submit-error"></p>
+                <button type="button" id="btn-student-submit" class="btn btn-primary hidden-pane" style="width:100%; margin-top:var(--space-sm);" onclick="submitStudentAnswer()">Submit Answer</button>
+                <div id="student-feedback-container" class="hidden-pane"></div>
+              </div>
+              <div id="student-history-container"></div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <!-- Grounding Note -->
+    <footer class="sources-note">
+      <p style="margin: 0;">
+        <strong>Pre-loaded course questions</strong> are grounded in analytical chemistry course materials:
+        <em>Titrimetric Methods of Analysis</em> (Nernst potential in Fe²⁺/Ce⁴⁺ redox titrations, primary standard criteria),
+        <em>Precipitation Gravimetry</em> (von Weimarn relative supersaturation ratio),
+        <em>Karl Fischer Titration Technical Manual</em> (titer / water equivalent), and
+        <em>Instrumental &amp; Surface Characterization Lectures</em> (AFM tapping mode, SEM Ar/Au sputter coating, DSC thermal transitions).
+      </p>
+    </footer>
+  </div>
+
+  <!-- Toast feedback container -->
+  <div class="toast-region" id="toast-region" aria-live="polite"></div>
+
+  <api-shim></api-shim>
+  <script>
+    /* ================================================================
+       State Schema & Seed Data (Analytical Chemistry Grounded)
+       ================================================================ */
+    var APP_VERSION = 1;
+
+    function createInitialState() {
+      return {
+        version: APP_VERSION,
+        workspaceMode: 'dual',
+        mobileDeviceSim: true,
+        activeTeacherClassId: 'cls_chem345',
+        inspectedQuestionId: 'q_titr_1',
+        studentSearch: '',
+        statusFilter: 'all',
+        composerMcqKey: 0,
+        activeStudentSlotId: 'slot_1',
+        studentSlots: [
+          {
+            id: 'slot_1',
+            label: 'Device 1',
+            classId: null,
+            studentId: null,
+            prefillCode: 'TITR84',
+            prefillName: ''
+          }
+        ],
+        classes: [
+          {
+            id: 'cls_chem345',
+            name: `CHEM 345 — Titrimetric & Gravimetric Analysis`,
+            code: `TITR84`,
+            liveQuestionId: 'q_titr_1',
+            questions: [
+              {
+                id: 'q_titr_1',
+                type: 'mcq',
+                prompt: `According to von Weimarn's law for Relative Supersaturation RSS = (Q - S) / S, which condition produces larger, more easily filterable crystals?`,
+                options: [
+                  `High RSS via concentrated reagents mixed rapidly at room temperature`,
+                  `Low RSS via dilute solutions, slow addition with stirring, and hot solution`,
+                  `Maximizing Q while keeping solubility S near zero`,
+                  `Skipping digestion so primary nucleation dominates growth`
+                ],
+                correctIndex: 1,
+                correctText: ``,
+                points: 10,
+                explanation: `Lowering Q (dilute solutions, slow mixing) and raising S transiently (hot solution, pH control) keeps RSS low so crystal growth outpaces massive nucleation.`,
+                createdAt: 1795180000000
+              },
+              {
+                id: 'q_titr_2',
+                type: 'mcq',
+                prompt: `In volumetric Karl Fischer titration, a reagent has a titer (Water Equivalent, WE) of 2.1 mg/mL. If 4.0 mL of reagent reaches the endpoint, how much water was present in the sample?`,
+                options: [
+                  `0.525 mg H2O`,
+                  `6.1 mg H2O`,
+                  `8.4 mg H2O`,
+                  `16.8 mg H2O`
+                ],
+                correctIndex: 2,
+                correctText: ``,
+                points: 10,
+                explanation: `WE = Weight of water (mg) / Volume of reagent (mL). Therefore, water = 2.1 mg/mL x 4.0 mL = 8.4 mg H2O.`,
+                createdAt: 1795180100000
+              },
+              {
+                id: 'q_titr_3',
+                type: 'short',
+                prompt: `In a redox titration of 20 mL of 0.10 M Fe2+ with 0.10 M Ce4+, at what added volume (in mL) of Ce4+ is the equivalence point reached?`,
+                options: [],
+                correctIndex: 0,
+                correctText: `20, 20 mL, 20.0, 20.0 mL`,
+                points: 10,
+                explanation: `With 1:1 stoichiometry (Fe2+ + Ce4+ -> Fe3+ + Ce3+) and equal 0.10 M concentrations, M1V1 = M2V2 gives 20 mL.`,
+                createdAt: 1795180200000
+              },
+              {
+                id: 'q_titr_4',
+                type: 'mcq',
+                prompt: `Why is an inorganic acid sample neutralized with an amine such as pyridine before methanol-based Karl Fischer titration?`,
+                options: [
+                  `To convert volumetric titration into coulometric titration automatically`,
+                  `To prevent low pH slowdown and esterification side reactions that generate extra water`,
+                  `To precipitate chloride as red silver chromate (Ag2CrO4)`,
+                  `To increase the ionic strength of the anode chamber`
+                ],
+                correctIndex: 1,
+                correctText: ``,
+                points: 10,
+                explanation: `Acids lower pH (slowing KF reaction rate) and undergo esterification with methanol, producing water and falsely elevating moisture readings.`,
+                createdAt: 1795180300000
+              }
+            ],
+            students: []
+          },
+          {
+            id: 'cls_chem408',
+            name: `CHEM 408 — Instrumental & Surface Methods`,
+            code: `SPEC92`,
+            liveQuestionId: 'q_inst_1',
+            questions: [
+              {
+                id: 'q_inst_1',
+                type: 'mcq',
+                prompt: `Which Atomic Force Microscopy (AFM) mode oscillates the cantilever above the surface using amplitude feedback, achieving 1-5 nm lateral resolution with minimal damage to soft biological samples?`,
+                options: [
+                  `Contact mode with soft silicon nitride cantilever`,
+                  `Tapping (intermittent contact) mode`,
+                  `Non-contact mode on hydrophilic fluid layers`,
+                  `Constant-current STM mode`
+                ],
+                correctIndex: 1,
+                correctText: ``,
+                points: 10,
+                explanation: `Tapping mode eliminates nearly all lateral shear forces and tracks oscillation amplitude, making it ideal for soft or biological specimens in air.`,
+                createdAt: 1795180400000
+              },
+              {
+                id: 'q_inst_2',
+                type: 'short',
+                prompt: `In conventional SEM sputter coating, which inert gas is introduced at ~10^-4 torr and ionized at 5000 V (creating a violet plasma) to eject gold atoms onto the specimen?`,
+                options: [],
+                correctIndex: 0,
+                correctText: `argon, ar`,
+                points: 10,
+                explanation: `Heavy argon (Ar) ions bombard the gold or gold-palladium target inside the evacuated sputter coater chamber.`,
+                createdAt: 1795180500000
+              },
+              {
+                id: 'q_inst_3',
+                type: 'mcq',
+                prompt: `In Differential Scanning Calorimetry (DSC) of polyethylene terephthalate (PET), which pair represents reversible thermal transitions?`,
+                options: [
+                  `Glass transition and melting`,
+                  `Crystallization and cross-linking cure`,
+                  `Oxidation and evaporation`,
+                  `Sputtering and degradation`
+                ],
+                correctIndex: 0,
+                correctText: ``,
+                points: 10,
+                explanation: `Glass transition and melting are reversible thermal events in DSC, whereas crystallization, curing, oxidation, and evaporation are non-reversible.`,
+                createdAt: 1795180600000
+              }
+            ],
+            students: []
+          }
+        ]
+      };
+    }
+
+    var appState = createInitialState();
+    var pendingDraftMcq = null;
+    var pendingDraftShort = '';
+    var toastTimer = null;
+
+    /* ================================================================
+       Persistence & Utility Helpers
+       ================================================================ */
+    async function persistState() {
+      try {
+        if (window.notebookAppApi && typeof window.notebookAppApi.setAppState === 'function') {
+          await window.notebookAppApi.setAppState(appState);
+          var syncEl = document.getElementById('header-sync-status');
+          if (syncEl) syncEl.textContent = 'Saved';
+        }
+      } catch (err) {
+        showToast(`Could not persist session state.`, 'err');
+      }
+    }
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function getActiveTeacherClass() {
+      var found = appState.classes.find(function (c) { return c.id === appState.activeTeacherClassId; });
+      if (!found && appState.classes.length > 0) {
+        found = appState.classes[0];
+        appState.activeTeacherClassId = found.id;
+      }
+      return found || null;
+    }
+
+    function getClassById(id) {
+      return appState.classes.find(function (c) { return c.id === id; }) || null;
+    }
+
+    function getClassByCode(code) {
+      var clean = String(code || '').trim().toUpperCase();
+      return appState.classes.find(function (c) { return c.code.toUpperCase() === clean; }) || null;
+    }
+
+    function getActiveStudentSlot() {
+      var slot = appState.studentSlots.find(function (s) { return s.id === appState.activeStudentSlotId; });
+      if (!slot && appState.studentSlots.length > 0) {
+        slot = appState.studentSlots[0];
+        appState.activeStudentSlotId = slot.id;
+      }
+      return slot || null;
+    }
+
+    function generateJoinCode() {
+      var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      var existing = {};
+      appState.classes.forEach(function (c) { existing[c.code.toUpperCase()] = true; });
+      for (var attempt = 0; attempt < 30; attempt++) {
+        var code = '';
+        for (var i = 0; i < 6; i++) {
+          code += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        if (!existing[code]) return code;
+      }
+      return 'CLS' + String(Date.now()).slice(-3);
+    }
+
+    function showToast(message, variant) {
+      var region = document.getElementById('toast-region');
+      if (!region) return;
+      var card = document.createElement('div');
+      card.className = 'toast-card';
+      if (variant === 'ok') card.style.borderLeft = 'var(--status-bar-ok)';
+      if (variant === 'err') card.style.borderLeft = 'var(--status-bar-err)';
+      card.textContent = message;
+      region.innerHTML = '';
+      region.appendChild(card);
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () {
+        if (region) region.innerHTML = '';
+      }, 2800);
+    }
+
+    /* ================================================================
+       Grading & Metrics Calculations
+       ================================================================ */
+    function isAnswerCorrect(question, answerValue) {
+      if (!question || answerValue === null || answerValue === undefined) return false;
+      if (question.type === 'mcq') {
+        return Number(answerValue) === Number(question.correctIndex);
+      }
+      var normalizedInput = String(answerValue).trim().toLowerCase().replace(/\s+/g, ' ');
+      if (!normalizedInput) return false;
+      var accepted = String(question.correctText || '')
+        .split(',')
+        .map(function (s) { return s.trim().toLowerCase().replace(/\s+/g, ' '); })
+        .filter(Boolean);
+      return accepted.indexOf(normalizedInput) !== -1;
+    }
+
+    function getEffectiveVerdict(responseObj) {
+      if (!responseObj) return null;
+      if (responseObj.manualOverride !== null && responseObj.manualOverride !== undefined) {
+        return Boolean(responseObj.manualOverride);
+      }
+      return Boolean(responseObj.autoCorrect);
+    }
+
+    function formatAnswerDisplay(question, answerValue) {
+      if (!question || answerValue === null || answerValue === undefined || answerValue === '') return '—';
+      if (question.type === 'mcq') {
+        var idx = Number(answerValue);
+        var letters = ['A', 'B', 'C', 'D'];
+        var text = question.options[idx] !== undefined ? question.options[idx] : '';
+        return letters[idx] + ': ' + text;
+      }
+      return String(answerValue);
+    }
+
+    function computeStudentStats(cls, student) {
+      var earned = 0;
+      var possible = 0;
+      var interactions = 0;
+      var correctCount = 0;
+
+      cls.questions.forEach(function (q) {
+        var resp = student.responses ? student.responses[q.id] : null;
+        if (resp) {
+          interactions += 1;
+          possible += Number(q.points || 10);
+          var isOk = getEffectiveVerdict(resp);
+          if (isOk) {
+            earned += Number(q.points || 10);
+            correctCount += 1;
+          }
+        }
+      });
+
+      var totalClassPoints = cls.questions.reduce(function (acc, q) { return acc + Number(q.points || 10); }, 0);
+      var accuracyPct = interactions > 0 ? Math.round((correctCount / interactions) * 100) : null;
+
+      return {
+        earned: earned,
+        possible: possible,
+        totalClassPoints: totalClassPoints,
+        interactions: interactions,
+        correctCount: correctCount,
+        accuracyPct: accuracyPct
+      };
+    }
+
+    function computeClassMetrics(cls) {
+      var totalInteractions = 0;
+      var totalCorrect = 0;
+      var liveResponses = 0;
+
+      cls.students.forEach(function (st) {
+        cls.questions.forEach(function (q) {
+          var resp = st.responses ? st.responses[q.id] : null;
+          if (resp) {
+            totalInteractions += 1;
+            if (getEffectiveVerdict(resp)) totalCorrect += 1;
+            if (q.id === cls.liveQuestionId) liveResponses += 1;
+          }
+        });
+      });
+
+      var accuracyPct = totalInteractions > 0 ? Math.round((totalCorrect / totalInteractions) * 100) : null;
+      return {
+        totalInteractions: totalInteractions,
+        totalCorrect: totalCorrect,
+        accuracyPct: accuracyPct,
+        liveResponses: liveResponses,
+        studentCount: cls.students.length
+      };
+    }
+
+    /* ================================================================
+       Workspace / Perspective Controls
+       ================================================================ */
+    function setWorkspaceMode(mode) {
+      appState.workspaceMode = mode;
+      renderAll();
+      persistState();
+    }
+
+    function toggleStudentDeviceFrame() {
+      appState.mobileDeviceSim = !appState.mobileDeviceSim;
+      renderWorkspaceLayout();
+      persistState();
+    }
+
+    function renderWorkspaceLayout() {
+      var shell = document.getElementById('workspace-shell');
+      var teacherPane = document.getElementById('teacher-pane');
+      var studentPane = document.getElementById('student-pane');
+      var tabDual = document.getElementById('tab-dual');
+      var tabTeacher = document.getElementById('tab-teacher');
+      var tabStudent = document.getElementById('tab-student');
+      var deviceFrame = document.getElementById('student-device-frame');
+      var frameLabel = document.getElementById('device-frame-label');
+      var simBadge = document.getElementById('sim-viewport-badge');
+
+      if (!shell || !teacherPane || !studentPane) return;
+
+      var mode = appState.workspaceMode || 'dual';
+      shell.classList.toggle('is-dual', mode === 'dual');
+
+      teacherPane.classList.toggle('hidden-pane', mode === 'student');
+      studentPane.classList.toggle('hidden-pane', mode === 'teacher');
+
+      if (tabDual) {
+        tabDual.classList.toggle('is-active', mode === 'dual');
+        tabDual.setAttribute('aria-selected', mode === 'dual' ? 'true' : 'false');
+      }
+      if (tabTeacher) {
+        tabTeacher.classList.toggle('is-active', mode === 'teacher');
+        tabTeacher.setAttribute('aria-selected', mode === 'teacher' ? 'true' : 'false');
+      }
+      if (tabStudent) {
+        tabStudent.classList.toggle('is-active', mode === 'student');
+        tabStudent.setAttribute('aria-selected', mode === 'student' ? 'true' : 'false');
+      }
+
+      if (deviceFrame) {
+        deviceFrame.classList.toggle('is-mobile-sim', Boolean(appState.mobileDeviceSim));
+      }
+      if (frameLabel) {
+        frameLabel.textContent = appState.mobileDeviceSim ? 'Phone Frame: On (390px)' : 'Phone Frame: Fluid Web';
+      }
+      if (simBadge) {
+        simBadge.textContent = appState.mobileDeviceSim ? 'SIM DEVICE · 390px' : 'SIM DEVICE · FLUID';
+      }
+    }
+
+    /* ================================================================
+       Teacher Actions: Class Create / Switch / Question Composer
+       ================================================================ */
+    function switchTeacherClass(classId) {
+      var cls = getClassById(classId);
+      if (!cls) return;
+      appState.activeTeacherClassId = cls.id;
+      appState.inspectedQuestionId = cls.liveQuestionId || (cls.questions[0] ? cls.questions[0].id : null);
+      renderAll();
+      persistState();
+    }
+
+    function toggleNewClassDrawer(forceState) {
+      var drawer = document.getElementById('new-class-drawer');
+      var errEl = document.getElementById('new-class-error');
+      var codeInput = document.getElementById('input-new-class-code');
+      if (!drawer) return;
+      var willOpen = typeof forceState === 'boolean' ? forceState : drawer.classList.contains('hidden-pane');
+      drawer.classList.toggle('hidden-pane', !willOpen);
+      if (errEl) errEl.classList.add('hidden-pane');
+      if (willOpen && codeInput && !codeInput.value) {
+        codeInput.value = generateJoinCode();
+      }
+    }
+
+    function regenerateNewClassCode() {
+      var codeInput = document.getElementById('input-new-class-code');
+      if (codeInput) codeInput.value = generateJoinCode();
+    }
+
+    function createNewClass() {
+      var nameInput = document.getElementById('input-new-class-name');
+      var codeInput = document.getElementById('input-new-class-code');
+      var errEl = document.getElementById('new-class-error');
+      if (!nameInput || !codeInput || !errEl) return;
+
+      var name = nameInput.value.trim();
+      var code = codeInput.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+      if (name.length < 3) {
+        errEl.textContent = `Enter a class name of at least 3 characters.`;
+        errEl.classList.remove('hidden-pane');
+        nameInput.classList.add('is-error');
+        return;
+      }
+      nameInput.classList.remove('is-error');
+
+      if (code.length < 4) {
+        errEl.textContent = `Join code must be 4–8 alphanumeric characters.`;
+        errEl.classList.remove('hidden-pane');
+        codeInput.classList.add('is-error');
+        return;
+      }
+      if (getClassByCode(code)) {
+        errEl.textContent = `Code "${code}" is already assigned to another class. Click Regenerate for a unique code.`;
+        errEl.classList.remove('hidden-pane');
+        codeInput.classList.add('is-error');
+        return;
+      }
+      codeInput.classList.remove('is-error');
+      errEl.classList.add('hidden-pane');
+
+      var newCls = {
+        id: 'cls_' + Date.now(),
+        name: name,
+        code: code,
+        liveQuestionId: null,
+        questions: [],
+        students: []
+      };
+      appState.classes.unshift(newCls);
+      appState.activeTeacherClassId = newCls.id;
+      appState.inspectedQuestionId = null;
+
+      nameInput.value = '';
+      codeInput.value = '';
+      toggleNewClassDrawer(false);
+      renderAll();
+      persistState();
+      showToast(`Created class "${name}" with join code ${code}.`, 'ok');
+    }
+
+    function copyActiveJoinCode() {
+      var cls = getActiveTeacherClass();
+      if (!cls) return;
+      var label = document.getElementById('copy-code-text');
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        navigator.clipboard.writeText(cls.code).catch(function () {});
+      }
+      if (label) {
+        label.textContent = 'Copied';
+        setTimeout(function () {
+          var el = document.getElementById('copy-code-text');
+          if (el) el.textContent = 'Copy';
+        }, 1600);
+      }
+      showToast(`Class join code ${cls.code} ready to share.`, 'ok');
+    }
+
+    function quickFillStudentCode() {
+      var cls = getActiveTeacherClass();
+      var slot = getActiveStudentSlot();
+      if (!cls || !slot) return;
+      slot.prefillCode = cls.code;
+      if (slot.classId && slot.classId !== cls.id) {
+        slot.classId = null;
+        slot.studentId = null;
+      }
+      if (appState.workspaceMode === 'teacher') {
+        appState.workspaceMode = 'dual';
+      }
+      renderAll();
+      persistState();
+      showToast(`Loaded join code ${cls.code} into ${slot.label}.`, 'ok');
+    }
+
+    function handleQuestionTypeChange() {
+      var typeSel = document.getElementById('select-q-type');
+      var mcqArea = document.getElementById('composer-mcq-area');
+      var shortArea = document.getElementById('composer-short-area');
+      if (!typeSel || !mcqArea || !shortArea) return;
+      var isMcq = typeSel.value === 'mcq';
+      mcqArea.classList.toggle('hidden-pane', !isMcq);
+      shortArea.classList.toggle('hidden-pane', isMcq);
+    }
+
+    function selectComposerMcqKey(idx) {
+      appState.composerMcqKey = idx;
+      for (var i = 0; i < 4; i++) {
+        var btn = document.getElementById('key-btn-' + i);
+        if (btn) btn.classList.toggle('is-selected', i === idx);
+      }
+    }
+
+    function publishQuestion(makeLive) {
+      var cls = getActiveTeacherClass();
+      if (!cls) return;
+
+      var promptEl = document.getElementById('input-q-prompt');
+      var typeEl = document.getElementById('select-q-type');
+      var pointsEl = document.getElementById('input-q-points');
+      var shortKeyEl = document.getElementById('input-short-key');
+      var explEl = document.getElementById('input-q-explanation');
+      var errEl = document.getElementById('composer-error');
+
+      if (!promptEl || !typeEl || !pointsEl || !errEl) return;
+
+      var prompt = promptEl.value.trim();
+      var qType = typeEl.value;
+      var points = Math.max(1, Math.min(100, parseInt(pointsEl.value, 10) || 10));
+      var explanation = explEl ? explEl.value.trim() : '';
+
+      if (prompt.length < 5) {
+        errEl.textContent = `Write a question prompt (at least 5 characters) before posting.`;
+        errEl.classList.remove('hidden-pane');
+        promptEl.classList.add('is-error');
+        return;
+      }
+      promptEl.classList.remove('is-error');
+
+      var options = [];
+      var correctIndex = 0;
+      var correctText = '';
+
+      if (qType === 'mcq') {
+        var rawOpts = [];
+        for (var i = 0; i < 4; i++) {
+          var optInput = document.getElementById('input-opt-' + i);
+          var val = optInput ? optInput.value.trim() : '';
+          if (val) {
+            rawOpts.push({ origIdx: i, text: val });
+          }
+        }
+        if (rawOpts.length < 2) {
+          errEl.textContent = `Multiple Choice questions require at least 2 filled answer options.`;
+          errEl.classList.remove('hidden-pane');
+          return;
+        }
+        var selectedMapped = -1;
+        rawOpts.forEach(function (item, mappedIdx) {
+          options.push(item.text);
+          if (item.origIdx === appState.composerMcqKey) {
+            selectedMapped = mappedIdx;
+          }
+        });
+        if (selectedMapped === -1) {
+          errEl.textContent = `Your selected Answer Key letter is empty. Fill that option or select another letter as the key.`;
+          errEl.classList.remove('hidden-pane');
+          return;
+        }
+        correctIndex = selectedMapped;
+      } else {
+        correctText = shortKeyEl ? shortKeyEl.value.trim() : '';
+        if (!correctText) {
+          errEl.textContent = `Enter an accepted auto-grading Answer Key for this Short Answer question.`;
+          errEl.classList.remove('hidden-pane');
+          if (shortKeyEl) shortKeyEl.classList.add('is-error');
+          return;
+        }
+        if (shortKeyEl) shortKeyEl.classList.remove('is-error');
+      }
+
+      errEl.classList.add('hidden-pane');
+
+      var newQ = {
+        id: 'q_' + Date.now(),
+        type: qType,
+        prompt: prompt,
+        options: options,
+        correctIndex: correctIndex,
+        correctText: correctText,
+        points: points,
+        explanation: explanation,
+        createdAt: Date.now()
+      };
+
+      cls.questions.push(newQ);
+      if (makeLive) {
+        cls.liveQuestionId = newQ.id;
+        appState.inspectedQuestionId = newQ.id;
+        pendingDraftMcq = null;
+        pendingDraftShort = '';
+      } else if (!appState.inspectedQuestionId) {
+        appState.inspectedQuestionId = newQ.id;
+      }
+
+      promptEl.value = '';
+      for (var j = 0; j < 4; j++) {
+        var optIn = document.getElementById('input-opt-' + j);
+        if (optIn) optIn.value = '';
+      }
+      if (shortKeyEl) shortKeyEl.value = '';
+      if (explEl) explEl.value = '';
+      selectComposerMcqKey(0);
+
+      renderAll();
+      persistState();
+      showToast(makeLive ? `Question is now LIVE for ${cls.code}!` : `Question saved to ${cls.code} bank.`, 'ok');
+    }
+
+    function setLiveQuestion(questionId) {
+      var cls = getActiveTeacherClass();
+      if (!cls) return;
+      cls.liveQuestionId = questionId;
+      if (questionId) {
+        appState.inspectedQuestionId = questionId;
+      }
+      pendingDraftMcq = null;
+      pendingDraftShort = '';
+      renderAll();
+      persistState();
+      showToast(questionId ? `Broadcast switched to selected question.` : `Live question closed.`, 'ok');
+    }
+
+    function setInspectedQuestion(questionId) {
+      appState.inspectedQuestionId = questionId;
+      renderTeacherDashboardTable();
+      persistState();
+    }
+
+    function setStudentSearch(val) {
+      appState.studentSearch = val;
+      renderTeacherDashboardTable();
+    }
+
+    function setStatusFilter(val) {
+      appState.statusFilter = val;
+      renderTeacherDashboardTable();
+    }
+
+    function toggleManualOverride(studentId, questionId) {
+      var cls = getActiveTeacherClass();
+      if (!cls) return;
+      var student = cls.students.find(function (s) { return s.id === studentId; });
+      if (!student || !student.responses || !student.responses[questionId]) return;
+
+      var resp = student.responses[questionId];
+      var currentEffective = getEffectiveVerdict(resp);
+      var nextVerdict = !currentEffective;
+
+      // If toggling back to match autoCorrect, clear manualOverride; otherwise store override boolean
+      if (nextVerdict === Boolean(resp.autoCorrect)) {
+        resp.manualOverride = null;
+      } else {
+        resp.manualOverride = nextVerdict;
+      }
+
+      renderAll();
+      persistState();
+      showToast(
+        resp.manualOverride === null
+          ? `Restored auto-grade (${resp.autoCorrect ? 'Correct' : 'Incorrect'}) for ${student.name}.`
+          : `Manual override applied: ${student.name} marked ${resp.manualOverride ? 'Correct' : 'Incorrect'}.`,
+        'ok'
+      );
+    }
+
+    function populateSimulatedCohort() {
+      var cls = getActiveTeacherClass();
+      if (!cls) return;
+      if (cls.questions.length === 0) {
+        showToast(`Post at least one question before simulating student answers.`, 'err');
+        return;
+      }
+
+      var sampleNames = ['Participant 01 (Sim)', 'Participant 02 (Sim)', 'Participant 03 (Sim)', 'Participant 04 (Sim)'];
+      var added = 0;
+
+      sampleNames.forEach(function (sampleName, idx) {
+        var exists = cls.students.some(function (s) { return s.name === sampleName; });
+        if (exists) return;
+
+        var st = {
+          id: 'st_sim_' + Date.now() + '_' + idx,
+          name: sampleName,
+          joinedAt: Date.now() - (4 - idx) * 60000,
+          responses: {}
+        };
+
+        cls.questions.forEach(function (q, qIdx) {
+          // Leave final question unanswered for Participant 04 to demonstrate pending state
+          if (idx === 3 && qIdx === cls.questions.length - 1 && cls.questions.length > 1) return;
+
+          var ansVal;
+          if (q.type === 'mcq') {
+            if (idx === 0 || (idx === 1 && qIdx % 2 === 0)) {
+              ansVal = q.correctIndex;
+            } else {
+              ansVal = (q.correctIndex + 1 + (idx % 2)) % q.options.length;
+            }
+          } else {
+            var firstKey = String(q.correctText || '').split(',')[0].trim();
+            ansVal = (idx === 0 || idx === 2) ? firstKey : '15.0 mL';
+          }
+
+          var autoOk = isAnswerCorrect(q, ansVal);
+          st.responses[q.id] = {
+            answer: ansVal,
+            autoCorrect: autoOk,
+            manualOverride: null,
+            submittedAt: Date.now() - (3 - idx) * 15000
+          };
+        });
+
+        cls.students.push(st);
+        added += 1;
+      });
+
+      if (added === 0) {
+        showToast(`Sample simulated participants are already loaded in ${cls.code}.`, 'ok');
+        return;
+      }
+      renderAll();
+      persistState();
+      showToast(`Added ${added} simulated participants to ${cls.code}.`, 'ok');
+    }
+
+    function exportClassCsv() {
+      var cls = getActiveTeacherClass();
+      if (!cls) return;
+      var headers = ['Class Code', 'Student Name', 'Interactions', 'Score Earned', 'Possible Points', 'Accuracy %'];
+      cls.questions.forEach(function (q, i) {
+        headers.push('Q' + (i + 1) + ' Answer');
+        headers.push('Q' + (i + 1) + ' Verdict');
+      });
+
+      var rows = [headers.map(csvEscape).join(',')];
+      cls.students.forEach(function (st) {
+        var stats = computeStudentStats(cls, st);
+        var row = [
+          cls.code,
+          st.name,
+          stats.interactions,
+          stats.earned,
+          stats.possible,
+          stats.accuracyPct === null ? 'N/A' : stats.accuracyPct + '%'
+        ];
+        cls.questions.forEach(function (q) {
+          var resp = st.responses ? st.responses[q.id] : null;
+          if (!resp) {
+            row.push('');
+            row.push('Unanswered');
+          } else {
+            var verdict = getEffectiveVerdict(resp) ? 'Correct' : 'Incorrect';
+            if (resp.manualOverride !== null && resp.manualOverride !== undefined) {
+              verdict += ' (Override)';
+            }
+            row.push(formatAnswerDisplay(q, resp.answer));
+            row.push(verdict);
+          }
+        });
+        rows.push(row.map(csvEscape).join(','));
+      });
+
+      var csvContent = rows.join('\n');
+      var filename = cls.code.toLowerCase() + '_gradebook.csv';
+      if (window.notebookAppApi && typeof window.notebookAppApi.triggerFileDownload === 'function') {
+        window.notebookAppApi.triggerFileDownload({
+          content: csvContent,
+          contentType: 'text/csv',
+          encoding: 'UTF-8',
+          filename: filename
+        });
+        showToast(`Exported ${filename}.`, 'ok');
+      } else {
+        showToast(`CSV prepared (${cls.students.length} student rows).`, 'ok');
+      }
+    }
+
+    function csvEscape(val) {
+      var s = String(val === null || val === undefined ? '' : val);
+      if (s.indexOf(',') !== -1 || s.indexOf('"') !== -1 || s.indexOf('\n') !== -1) {
+        return '"' + s.replace(/"/g, '""') + '"';
+      }
+      return s;
+    }
+
+    function handleResetDemo(btn) {
+      if (!btn) return;
+      if (btn.dataset.armed !== 'true') {
+        btn.dataset.armed = 'true';
+        btn.textContent = 'Confirm Reset?';
+        setTimeout(function () {
+          if (btn && btn.dataset.armed === 'true') {
+            btn.dataset.armed = 'false';
+            btn.innerHTML = '<i data-lucide="rotate-ccw" width="16" height="16" aria-hidden="true"></i> Reset Demo';
+            refreshIcons();
+          }
+        }, 3500);
+        return;
+      }
+      btn.dataset.armed = 'false';
+      btn.innerHTML = '<i data-lucide="rotate-ccw" width="16" height="16" aria-hidden="true"></i> Reset Demo';
+      appState = createInitialState();
+      pendingDraftMcq = null;
+      pendingDraftShort = '';
+      renderAll();
+      persistState();
+      showToast(`Demo reset to default Analytical Chemistry classes.`, 'ok');
+    }
+
+    /* ================================================================
+       Student Actions: Join Class, Switch Device Slot, Submit Answer
+       ================================================================ */
+    function switchStudentSlot(slotId) {
+      appState.activeStudentSlotId = slotId;
+      pendingDraftMcq = null;
+      pendingDraftShort = '';
+      renderStudentView();
+      renderTeacherDashboardTable();
+      persistState();
+    }
+
+    function addStudentSlot() {
+      var nextNum = appState.studentSlots.length + 1;
+      var cls = getActiveTeacherClass();
+      var newSlot = {
+        id: 'slot_' + Date.now(),
+        label: 'Device ' + nextNum,
+        classId: null,
+        studentId: null,
+        prefillCode: cls ? cls.code : '',
+        prefillName: ''
+      };
+      appState.studentSlots.push(newSlot);
+      appState.activeStudentSlotId = newSlot.id;
+      pendingDraftMcq = null;
+      pendingDraftShort = '';
+      renderStudentView();
+      persistState();
+    }
+
+    function fillStudentJoinCode(code) {
+      var slot = getActiveStudentSlot();
+      if (slot) slot.prefillCode = code;
+      var codeInput = document.getElementById('input-student-join-code');
+      if (codeInput) codeInput.value = code;
+    }
+
+    function joinStudentClass() {
+      var slot = getActiveStudentSlot();
+      var codeInput = document.getElementById('input-student-join-code');
+      var nameInput = document.getElementById('input-student-name');
+      var errEl = document.getElementById('student-join-error');
+      if (!slot || !codeInput || !nameInput || !errEl) return;
+
+      var code = codeInput.value.trim().toUpperCase();
+      var name = nameInput.value.trim();
+
+      if (!code) {
+        errEl.textContent = `Enter a Class Join Code (for example, TITR84 or SPEC92).`;
+        errEl.classList.remove('hidden-pane');
+        codeInput.classList.add('is-error');
+        return;
+      }
+      var targetClass = getClassByCode(code);
+      if (!targetClass) {
+        errEl.textContent = `Class code "${code}" was not found. Check the code in the Teacher Console or pick an active class badge above.`;
+        errEl.classList.remove('hidden-pane');
+        codeInput.classList.add('is-error');
+        return;
+      }
+      codeInput.classList.remove('is-error');
+
+      if (name.length < 2) {
+        errEl.textContent = `Enter your name (at least 2 characters) to join ${targetClass.code}.`;
+        errEl.classList.remove('hidden-pane');
+        nameInput.classList.add('is-error');
+        return;
+      }
+      nameInput.classList.remove('is-error');
+      errEl.classList.add('hidden-pane');
+
+      // Rejoin existing student with same name (case-insensitive) or create new student
+      var existing = targetClass.students.find(function (s) {
+        return s.name.toLowerCase() === name.toLowerCase();
+      });
+
+      if (!existing) {
+        existing = {
+          id: 'st_' + Date.now(),
+          name: name,
+          joinedAt: Date.now(),
+          responses: {}
+        };
+        targetClass.students.push(existing);
+      }
+
+      slot.classId = targetClass.id;
+      slot.studentId = existing.id;
+      slot.prefillCode = targetClass.code;
+      slot.prefillName = existing.name;
+      slot.label = existing.name;
+
+      pendingDraftMcq = null;
+      pendingDraftShort = '';
+
+      renderAll();
+      persistState();
+      showToast(`${existing.name} joined ${targetClass.code}.`, 'ok');
+    }
+
+    function leaveStudentClass() {
+      var slot = getActiveStudentSlot();
+      if (!slot) return;
+      slot.classId = null;
+      slot.studentId = null;
+      pendingDraftMcq = null;
+      pendingDraftShort = '';
+      renderAll();
+      persistState();
+    }
+
+    function selectStudentMcqOption(idx) {
+      pendingDraftMcq = idx;
+      var btns = document.querySelectorAll('.answer-choice-btn');
+      btns.forEach(function (b, bIdx) {
+        b.classList.toggle('is-selected', bIdx === idx);
+      });
+      var errEl = document.getElementById('student-submit-error');
+      if (errEl) errEl.classList.add('hidden-pane');
+    }
+
+    function updateStudentShortDraft(val) {
+      pendingDraftShort = val;
+      var errEl = document.getElementById('student-submit-error');
+      if (errEl) errEl.classList.add('hidden-pane');
+    }
+
+    function submitStudentAnswer() {
+      var slot = getActiveStudentSlot();
+      if (!slot || !slot.classId || !slot.studentId) return;
+      var cls = getClassById(slot.classId);
+      if (!cls || !cls.liveQuestionId) return;
+      var q = cls.questions.find(function (item) { return item.id === cls.liveQuestionId; });
+      var st = cls.students.find(function (item) { return item.id === slot.studentId; });
+      if (!q || !st) return;
+
+      var errEl = document.getElementById('student-submit-error');
+      var answerVal = null;
+
+      if (q.type === 'mcq') {
+        if (pendingDraftMcq === null || pendingDraftMcq === undefined) {
+          if (errEl) {
+            errEl.textContent = `Select one answer option before submitting.`;
+            errEl.classList.remove('hidden-pane');
+          }
+          return;
+        }
+        answerVal = pendingDraftMcq;
+      } else {
+        var shortInput = document.getElementById('input-student-short-answer');
+        var raw = shortInput ? shortInput.value.trim() : pendingDraftShort.trim();
+        if (!raw) {
+          if (errEl) {
+            errEl.textContent = `Type your answer before submitting.`;
+            errEl.classList.remove('hidden-pane');
+          }
+          if (shortInput) shortInput.classList.add('is-error');
+          return;
+        }
+        answerVal = raw;
+      }
+
+      if (!st.responses) st.responses = {};
+      var autoOk = isAnswerCorrect(q, answerVal);
+      st.responses[q.id] = {
+        answer: answerVal,
+        autoCorrect: autoOk,
+        manualOverride: null,
+        submittedAt: Date.now()
+      };
+
+      pendingDraftMcq = null;
+      pendingDraftShort = '';
+      renderAll();
+      persistState();
+    }
+
+    /* ================================================================
+       Rendering Functions
+       ================================================================ */
+    function renderAll() {
+      renderHeaderMeta();
+      renderWorkspaceLayout();
+      renderTeacherClassBar();
+      renderTeacherKpis();
+      renderTeacherQuestionQueue();
+      renderTeacherDashboardTable();
+      renderStudentView();
+      refreshIcons();
+    }
+
+    function renderHeaderMeta() {
+      var cls = getActiveTeacherClass();
+      var tag = document.getElementById('header-active-class-tag');
+      if (tag && cls) {
+        tag.textContent = 'Active: ' + cls.code;
+      }
+    }
+
+    function renderTeacherClassBar() {
+      var cls = getActiveTeacherClass();
+      var selectEl = document.getElementById('select-teacher-class');
+      var codeEl = document.getElementById('teacher-join-code');
+
+      if (selectEl) {
+        selectEl.innerHTML = appState.classes.map(function (c) {
+          var selected = cls && c.id === cls.id ? ' selected' : '';
+          return '<option value="' + escapeHtml(c.id) + '"' + selected + '>' +
+            escapeHtml(c.name) + ' (' + escapeHtml(c.code) + ' · ' + c.students.length + ' students)' +
+            '</option>';
+        }).join('');
+      }
+      if (codeEl && cls) {
+        codeEl.textContent = cls.code;
+      }
+    }
+
+    function renderTeacherKpis() {
+      var cls = getActiveTeacherClass();
+      if (!cls) return;
+      var metrics = computeClassMetrics(cls);
+
+      var elLive = document.getElementById('kpi-live-responses');
+      var elLiveCap = document.getElementById('kpi-live-caption');
+      var elAcc = document.getElementById('kpi-accuracy');
+      var elInt = document.getElementById('kpi-interactions');
+      var elStu = document.getElementById('kpi-students');
+      var elQCount = document.getElementById('kpi-questions-count');
+
+      if (elLive) elLive.textContent = metrics.liveResponses + ' / ' + metrics.studentCount;
+      if (elLiveCap) {
+        elLiveCap.textContent = cls.liveQuestionId ? 'Live question responses' : 'No question live';
+      }
+      if (elAcc) elAcc.textContent = metrics.accuracyPct === null ? '—' : metrics.accuracyPct + '%';
+      if (elInt) elInt.textContent = String(metrics.totalInteractions);
+      if (elStu) elStu.textContent = String(metrics.studentCount);
+      if (elQCount) elQCount.textContent = cls.questions.length + (cls.questions.length === 1 ? ' question in bank' : ' questions in bank');
+    }
+
+    function renderTeacherQuestionQueue() {
+      var cls = getActiveTeacherClass();
+      var distPanel = document.getElementById('live-dist-panel');
+      var listEl = document.getElementById('teacher-question-list');
+      var pillEl = document.getElementById('live-status-pill');
+      if (!cls || !distPanel || !listEl) return;
+
+      var liveQ = cls.questions.find(function (q) { return q.id === cls.liveQuestionId; }) || null;
+      if (pillEl) {
+        pillEl.textContent = liveQ ? '1 Live' : 'Paused';
+        pillEl.className = liveQ ? 'tag mono' : 'tag tag-neutral mono';
+      }
+
+      if (!liveQ) {
+        distPanel.innerHTML =
+          '<span class="label">Live Broadcast</span>' +
+          '<p class="helper-text" style="margin-top: var(--space-xs);">No question is currently live for ' + escapeHtml(cls.code) + '. Click <strong>Set Live</strong> on a question below or post a new question.</p>';
+      } else {
+        var qIndex = cls.questions.indexOf(liveQ) + 1;
+        var totalAns = 0;
+        var correctAns = 0;
+        var counts = liveQ.type === 'mcq' ? liveQ.options.map(function () { return 0; }) : [];
+
+        cls.students.forEach(function (st) {
+          var r = st.responses ? st.responses[liveQ.id] : null;
+          if (r) {
+            totalAns += 1;
+            if (getEffectiveVerdict(r)) correctAns += 1;
+            if (liveQ.type === 'mcq') {
+              var optIdx = Number(r.answer);
+              if (counts[optIdx] !== undefined) counts[optIdx] += 1;
+            }
+          }
+        });
+
+        var distHtml =
+          '<div style="display:flex; justify-content:space-between; align-items:center; gap:var(--space-sm); margin-bottom:var(--space-xs);">' +
+            '<span class="label">Live Now · Q' + qIndex + ' (' + liveQ.points + ' pts)</span>' +
+            '<button type="button" class="btn btn-compact btn-ghost" onclick="setLiveQuestion(null)">Pause Live</button>' +
+          '</div>' +
+          '<p style="margin:0 0 var(--space-sm) 0; font-weight:600;">' + escapeHtml(liveQ.prompt) + '</p>';
+
+        if (liveQ.type === 'mcq') {
+          var letters = ['A', 'B', 'C', 'D'];
+          liveQ.options.forEach(function (optText, idx) {
+            var c = counts[idx] || 0;
+            var pct = totalAns > 0 ? Math.round((c / totalAns) * 100) : 0;
+            var isKey = idx === liveQ.correctIndex;
+            distHtml +=
+              '<div style="margin-top: var(--space-xs);">' +
+                '<div style="display:flex; justify-content:space-between; font-size:0.8125rem;">' +
+                  '<span><strong>' + letters[idx] + '.</strong> ' + escapeHtml(optText) + (isKey ? ' <span class="status-text-ok">(Key)</span>' : '') + '</span>' +
+                  '<span class="mono">' + c + ' (' + pct + '%)</span>' +
+                '</div>' +
+                '<div class="dist-track"><div class="dist-fill ' + (isKey ? 'is-correct' : 'is-focal') + '" style="width:' + pct + '%;"></div></div>' +
+              '</div>';
+          });
+        } else {
+          distHtml +=
+            '<p class="helper-text mono">Auto-Grade Key: ' + escapeHtml(liveQ.correctText) + ' · ' + correctAns + '/' + totalAns + ' correct</p>';
+        }
+
+        distPanel.innerHTML = distHtml;
+      }
+
+      if (cls.questions.length === 0) {
+        listEl.innerHTML = '<p class="helper-text">No questions in this class yet. Use the Question Authoring form to create and broadcast your first live question.</p>';
+        return;
+      }
+
+      listEl.innerHTML = cls.questions.map(function (q, idx) {
+        var isLive = q.id === cls.liveQuestionId;
+        var respCount = cls.students.filter(function (s) { return s.responses && s.responses[q.id]; }).length;
+        var keyPreview = q.type === 'mcq'
+          ? ('Key: ' + ['A', 'B', 'C', 'D'][q.correctIndex])
+          : ('Key: ' + q.correctText);
+
+        return '<div class="question-item' + (isLive ? ' is-live' : '') + '">' +
+          '<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:var(--space-sm);">' +
+            '<div>' +
+              '<span class="label">Q' + (idx + 1) + ' · ' + (q.type === 'mcq' ? 'Multiple Choice' : 'Short Answer') + ' · ' + q.points + ' pts</span>' +
+              '<p style="margin: var(--space-xs) 0 0 0; font-weight: 500;">' + escapeHtml(q.prompt) + '</p>' +
+            '</div>' +
+            (isLive
+              ? '<span class="tag mono">LIVE</span>'
+              : '<button type="button" class="btn btn-compact btn-secondary" onclick="setLiveQuestion(\'' + escapeHtml(q.id) + '\')">Set Live</button>') +
+          '</div>' +
+          '<div style="display:flex; flex-wrap:wrap; justify-content:space-between; gap:var(--space-sm); align-items:center;">' +
+            '<span class="helper-text mono">' + escapeHtml(keyPreview) + ' · ' + respCount + ' responses</span>' +
+            '<button type="button" class="btn btn-compact btn-ghost" onclick="setInspectedQuestion(\'' + escapeHtml(q.id) + '\')">Inspect in Table</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    function renderTeacherDashboardTable() {
+      var cls = getActiveTeacherClass();
+      var qSelect = document.getElementById('select-inspect-question');
+      var container = document.getElementById('teacher-table-container');
+      if (!cls || !container) return;
+
+      var inspectQ = cls.questions.find(function (q) { return q.id === appState.inspectedQuestionId; })
+        || cls.questions.find(function (q) { return q.id === cls.liveQuestionId; })
+        || cls.questions[0]
+        || null;
+
+      if (inspectQ) {
+        appState.inspectedQuestionId = inspectQ.id;
+      } else {
+        appState.inspectedQuestionId = null;
+      }
+
+      if (qSelect) {
+        if (cls.questions.length === 0) {
+          qSelect.innerHTML = '<option value="">No questions posted yet</option>';
+          qSelect.disabled = true;
+        } else {
+          qSelect.disabled = false;
+          qSelect.innerHTML = cls.questions.map(function (q, idx) {
+            var isLive = q.id === cls.liveQuestionId;
+            var sel = inspectQ && q.id === inspectQ.id ? ' selected' : '';
+            var shortPrompt = q.prompt.length > 52 ? q.prompt.slice(0, 52) + '…' : q.prompt;
+            return '<option value="' + escapeHtml(q.id) + '"' + sel + '>' +
+              'Q' + (idx + 1) + (isLive ? ' [LIVE]' : '') + ': ' + escapeHtml(shortPrompt) +
+              '</option>';
+          }).join('');
+        }
+      }
+
+      if (cls.students.length === 0) {
+        container.innerHTML =
+          '<div class="notice notice-info">' +
+            '<i data-lucide="info" width="18" height="18" class="notice-icon" aria-hidden="true"></i>' +
+            '<div>' +
+              '<strong>No students have joined ' + escapeHtml(cls.code) + ' yet.</strong>' +
+              '<p class="helper-text" style="margin-top: var(--space-xs);">Join live in the Student View using code <span class="mono">' + escapeHtml(cls.code) + '</span>, or click <strong>Simulate 4 Sample Students</strong> above to populate the gradebook immediately.</p>' +
+            '</div>' +
+          '</div>';
+        return;
+      }
+
+      var search = (appState.studentSearch || '').trim().toLowerCase();
+      var filter = appState.statusFilter || 'all';
+      var activeSlot = getActiveStudentSlot();
+      var activeStudentId = (activeSlot && activeSlot.classId === cls.id) ? activeSlot.studentId : null;
+
+      var filteredStudents = cls.students.filter(function (st) {
+        if (search && st.name.toLowerCase().indexOf(search) === -1) return false;
+        if (filter === 'all' || !inspectQ) return true;
+        var resp = st.responses ? st.responses[inspectQ.id] : null;
+        if (filter === 'pending') return !resp;
+        if (!resp) return false;
+        var eff = getEffectiveVerdict(resp);
+        if (filter === 'correct') return eff === true;
+        if (filter === 'incorrect') return eff === false;
+        if (filter === 'overridden') return resp.manualOverride !== null && resp.manualOverride !== undefined;
+        return true;
+      });
+
+      if (filteredStudents.length === 0) {
+        container.innerHTML = '<p class="helper-text" style="padding: var(--space-md) 0;">No students match the current search or verdict filter.</p>';
+        return;
+      }
+
+      var rowsHtml = filteredStudents.map(function (st) {
+        var stats = computeStudentStats(cls, st);
+        var resp = inspectQ && st.responses ? st.responses[inspectQ.id] : null;
+        var isActiveSimStudent = activeStudentId && st.id === activeStudentId;
+
+        var qHistoryStrip = cls.questions.map(function (q, qIdx) {
+          var qr = st.responses ? st.responses[q.id] : null;
+          if (!qr) return '<span class="q-chip">Q' + (qIdx + 1) + ' —</span>';
+          var ok = getEffectiveVerdict(qr);
+          return '<span class="q-chip ' + (ok ? 'is-ok' : 'is-err') + '">Q' + (qIdx + 1) + (ok ? ' ✓' : ' ✗') + '</span>';
+        }).join('');
+
+        var answerCell = '<span class="status-text-neutral">Unanswered</span>';
+        var verdictCell = '<span class="status-text-neutral">Pending</span>';
+        var overrideCell = '<span class="helper-text">Awaiting response</span>';
+
+        if (resp && inspectQ) {
+          var isOk = getEffectiveVerdict(resp);
+          var hasOverride = resp.manualOverride !== null && resp.manualOverride !== undefined;
+          answerCell = '<span>' + escapeHtml(formatAnswerDisplay(inspectQ, resp.answer)) + '</span>';
+          verdictCell =
+            '<span class="' + (isOk ? 'status-text-ok' : 'status-text-err') + '">' +
+              (isOk ? 'Correct' : 'Incorrect') +
+            '</span>' +
+            (hasOverride ? '<br><span class="helper-text mono">Manual Override</span>' : '<br><span class="helper-text mono">Auto-Graded</span>');
+
+          var toggleLabel = isOk ? 'Override: Mark Incorrect' : 'Override: Mark Correct';
+          overrideCell =
+            '<button type="button" class="override-btn' + (hasOverride ? ' is-overridden' : '') + '" onclick="toggleManualOverride(\'' + escapeHtml(st.id) + '\', \'' + escapeHtml(inspectQ.id) + '\')">' +
+              '<i data-lucide="sliders-horizontal" width="14" height="14" aria-hidden="true"></i> ' +
+              toggleLabel +
+            '</button>';
+        }
+
+        return '<tr class="' + (isActiveSimStudent ? 'is-selected-student' : '') + '">' +
+          '<td>' +
+            '<strong>' + escapeHtml(st.name) + '</strong>' +
+            (isActiveSimStudent ? ' <span class="tag">Active Device</span>' : '') +
+            '<div class="q-strip">' + qHistoryStrip + '</div>' +
+          '</td>' +
+          '<td>' + answerCell + '</td>' +
+          '<td>' + verdictCell + '</td>' +
+          '<td class="num-col mono">' + stats.interactions + ' / ' + cls.questions.length + '</td>' +
+          '<td class="num-col mono"><strong>' + stats.earned + '</strong> / ' + stats.possible + ' pts' +
+            (stats.accuracyPct !== null ? '<br><span class="helper-text">' + stats.accuracyPct + '%</span>' : '') +
+          '</td>' +
+          '<td>' + overrideCell + '</td>' +
+        '</tr>';
+      }).join('');
+
+      container.innerHTML =
+        '<div class="table-scroll">' +
+          '<table class="grade-table">' +
+            '<thead>' +
+              '<tr>' +
+                '<th>Student &amp; Progress</th>' +
+                '<th>Selected Q Answer</th>' +
+                '<th>Grade Status</th>' +
+                '<th class="num-col">Interactions</th>' +
+                '<th class="num-col">Score</th>' +
+                '<th>Manual Grade Override</th>' +
+              '</tr>' +
+            '</thead>' +
+            '<tbody>' + rowsHtml + '</tbody>' +
+          '</table>' +
+        '</div>';
+    }
+
+    function renderStudentView() {
+      var switcherEl = document.getElementById('student-session-switcher');
+      var joinPanel = document.getElementById('student-join-panel');
+      var activePanel = document.getElementById('student-active-panel');
+      var connEl = document.getElementById('sim-connection-badge');
+      if (!joinPanel || !activePanel) return;
+
+      var activeSlot = getActiveStudentSlot();
+
+      if (switcherEl) {
+        var pills = appState.studentSlots.map(function (s) {
+          var clsName = s.id === activeSlot.id ? 'seat-pill is-active' : 'seat-pill';
+          return '<button type="button" class="' + clsName + '" onclick="switchStudentSlot(\'' + escapeHtml(s.id) + '\')">' +
+            escapeHtml(s.label) +
+          '</button>';
+        }).join('');
+        pills += '<button type="button" class="seat-pill" onclick="addStudentSlot()" title="Simulate another student device">+ Student</button>';
+        switcherEl.innerHTML = pills;
+      }
+
+      var joinedClass = activeSlot && activeSlot.classId ? getClassById(activeSlot.classId) : null;
+      var joinedStudent = (joinedClass && activeSlot.studentId)
+        ? joinedClass.students.find(function (s) { return s.id === activeSlot.studentId; })
+        : null;
+
+      // If not joined yet (or student was reset), show Join Class screen
+      if (!joinedClass || !joinedStudent) {
+        if (connEl) connEl.textContent = 'NOT JOINED';
+        joinPanel.classList.remove('hidden-pane');
+        activePanel.classList.add('hidden-pane');
+
+        var chipsEl = document.getElementById('student-code-chips');
+        if (chipsEl) {
+          chipsEl.innerHTML = appState.classes.map(function (c) {
+            return '<button type="button" class="btn btn-compact btn-neutral mono" onclick="fillStudentJoinCode(\'' + escapeHtml(c.code) + '\')">' +
+              escapeHtml(c.code) +
+            '</button>';
+          }).join('');
+        }
+        var codeInput = document.getElementById('input-student-join-code');
+        var nameInput = document.getElementById('input-student-name');
+        var errEl = document.getElementById('student-join-error');
+        if (codeInput) codeInput.value = activeSlot.prefillCode || '';
+        if (nameInput) nameInput.value = activeSlot.prefillName || '';
+        if (errEl) errEl.classList.add('hidden-pane');
+        return;
+      }
+
+      joinPanel.classList.add('hidden-pane');
+      activePanel.classList.remove('hidden-pane');
+      if (connEl) connEl.textContent = 'LIVE · ' + joinedClass.code;
+
+      var stats = computeStudentStats(joinedClass, joinedStudent);
+      var liveQ = joinedClass.questions.find(function (q) { return q.id === joinedClass.liveQuestionId; }) || null;
+      var liveResp = (liveQ && joinedStudent.responses) ? joinedStudent.responses[liveQ.id] : null;
+
+      var headerCard = document.getElementById('student-header-card');
+      if (headerCard) {
+        headerCard.innerHTML =
+          '<div style="display:flex; justify-content:space-between; align-items:center; gap:var(--space-sm); background:var(--surface-container); padding:var(--space-sm) var(--space-md);">' +
+            '<div>' +
+              '<span class="label">' + escapeHtml(joinedClass.code) + ' · Student</span>' +
+              '<div style="font-weight:600;">' + escapeHtml(joinedStudent.name) + '</div>' +
+            '</div>' +
+            '<button type="button" class="btn btn-compact btn-ghost" onclick="leaveStudentClass()">Leave</button>' +
+          '</div>';
+      }
+
+      var statsEl = document.getElementById('student-stats-container');
+      if (statsEl) {
+        statsEl.innerHTML =
+          '<div class="student-stats-grid">' +
+            '<div class="kpi-tile key-tile">' +
+              '<span class="label">Score</span>' +
+              '<span class="mono" style="font-size:1.375rem; font-weight:400;">' + stats.earned + '/' + (stats.possible || 0) + '</span>' +
+            '</div>' +
+            '<div class="kpi-tile">' +
+              '<span class="label">Accuracy</span>' +
+              '<span class="mono" style="font-size:1.375rem; font-weight:400;">' + (stats.accuracyPct === null ? '—' : stats.accuracyPct + '%') + '</span>' +
+            '</div>' +
+            '<div class="kpi-tile">' +
+              '<span class="label">Answered</span>' +
+              '<span class="mono" style="font-size:1.375rem; font-weight:400;">' + stats.interactions + '/' + joinedClass.questions.length + '</span>' +
+            '</div>' +
+          '</div>';
+      }
+
+      var metaEl = document.getElementById('student-live-question-meta');
+      var mcqEl = document.getElementById('student-mcq-container');
+      var shortEl = document.getElementById('student-short-container');
+      var shortInput = document.getElementById('input-student-short-answer');
+      var submitErr = document.getElementById('student-submit-error');
+      var submitBtn = document.getElementById('btn-student-submit');
+      var feedbackEl = document.getElementById('student-feedback-container');
+
+      if (!liveQ) {
+        if (metaEl) {
+          metaEl.innerHTML =
+            '<div class="notice notice-info">' +
+              '<i data-lucide="clock" width="18" height="18" class="notice-icon" aria-hidden="true"></i>' +
+              '<div>' +
+                '<strong>Waiting for teacher</strong>' +
+                '<p class="helper-text" style="margin-top:var(--space-xs);">No live question is active in ' + escapeHtml(joinedClass.code) + ' right now. Click <strong>Set Live</strong> in the Teacher Console.</p>' +
+              '</div>' +
+            '</div>';
+        }
+        if (mcqEl) mcqEl.classList.add('hidden-pane');
+        if (shortEl) shortEl.classList.add('hidden-pane');
+        if (submitErr) submitErr.classList.add('hidden-pane');
+        if (submitBtn) submitBtn.classList.add('hidden-pane');
+        if (feedbackEl) feedbackEl.classList.add('hidden-pane');
+      } else {
+        var qNum = joinedClass.questions.indexOf(liveQ) + 1;
+        if (metaEl) {
+          metaEl.innerHTML =
+            '<div style="border-top: var(--rule); padding-top: var(--space-md); display:flex; flex-direction:column; gap:var(--space-sm); margin-bottom:var(--space-sm);">' +
+              '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+                '<span class="tag mono">LIVE QUESTION · Q' + qNum + '</span>' +
+                '<span class="label">' + liveQ.points + ' PTS</span>' +
+              '</div>' +
+              '<h3 class="section-title">' + escapeHtml(liveQ.prompt) + '</h3>' +
+            '</div>';
+        }
+
+        if (!liveResp) {
+          if (feedbackEl) feedbackEl.classList.add('hidden-pane');
+          if (submitBtn) submitBtn.classList.remove('hidden-pane');
+          if (submitErr) submitErr.classList.add('hidden-pane');
+
+          if (liveQ.type === 'mcq') {
+            if (shortEl) shortEl.classList.add('hidden-pane');
+            if (mcqEl) {
+              mcqEl.classList.remove('hidden-pane');
+              var letters = ['A', 'B', 'C', 'D'];
+              mcqEl.innerHTML = '<div class="answer-choice-list">' + liveQ.options.map(function (opt, idx) {
+                var isSel = pendingDraftMcq === idx;
+                return '<button type="button" class="answer-choice-btn' + (isSel ? ' is-selected' : '') + '" onclick="selectStudentMcqOption(' + idx + ')">' +
+                  '<span class="choice-letter">' + letters[idx] + '</span>' +
+                  '<span>' + escapeHtml(opt) + '</span>' +
+                '</button>';
+              }).join('') + '</div>';
+            }
+          } else {
+            if (mcqEl) mcqEl.classList.add('hidden-pane');
+            if (shortEl) shortEl.classList.remove('hidden-pane');
+            if (shortInput) {
+              shortInput.value = pendingDraftShort || '';
+              shortInput.classList.remove('is-error');
+            }
+          }
+        } else {
+          if (mcqEl) mcqEl.classList.add('hidden-pane');
+          if (shortEl) shortEl.classList.add('hidden-pane');
+          if (submitErr) submitErr.classList.add('hidden-pane');
+          if (submitBtn) submitBtn.classList.add('hidden-pane');
+
+          if (feedbackEl) {
+            var effOk = getEffectiveVerdict(liveResp);
+            var overridden = liveResp.manualOverride !== null && liveResp.manualOverride !== undefined;
+            var keyAnswerText = liveQ.type === 'mcq'
+              ? (['A', 'B', 'C', 'D'][liveQ.correctIndex] + ': ' + liveQ.options[liveQ.correctIndex])
+              : liveQ.correctText;
+
+            feedbackEl.classList.remove('hidden-pane');
+            feedbackEl.innerHTML =
+              '<div class="notice ' + (effOk ? 'notice-ok' : 'notice-err') + '">' +
+                '<i data-lucide="' + (effOk ? 'check-circle-2' : 'x-circle') + '" width="20" height="20" class="notice-icon" aria-hidden="true"></i>' +
+                '<div>' +
+                  '<strong>' + (effOk ? 'Correct' : 'Incorrect') + ' · ' + (effOk ? '+' + liveQ.points : '0') + ' pts' + (overridden ? ' (Teacher Override)' : '') + '</strong>' +
+                  '<p class="helper-text" style="margin-top:var(--space-xs);">Your answer: <strong>' + escapeHtml(formatAnswerDisplay(liveQ, liveResp.answer)) + '</strong></p>' +
+                  '<p class="helper-text" style="margin-top:var(--space-xs);">Answer key: <span class="mono">' + escapeHtml(keyAnswerText) + '</span></p>' +
+                  (liveQ.explanation ? '<p class="helper-text" style="margin-top:var(--space-xs); color:var(--on-surface);">' + escapeHtml(liveQ.explanation) + '</p>' : '') +
+                '</div>' +
+              '</div>';
+          }
+        }
+      }
+
+      // Personal Submission History
+      var historyEl = document.getElementById('student-history-container');
+      if (historyEl) {
+        var answeredItems = joinedClass.questions.filter(function (q) {
+          return joinedStudent.responses && joinedStudent.responses[q.id];
+        });
+
+        var histHtml = '<div style="border-top: var(--rule); padding-top: var(--space-md);">';
+        histHtml += '<span class="label" style="margin-bottom:var(--space-xs);">Your Submission History (' + answeredItems.length + ')</span>';
+        if (answeredItems.length === 0) {
+          histHtml += '<p class="helper-text">No submissions yet in this class.</p>';
+        } else {
+          histHtml += '<div class="history-list">';
+          answeredItems.forEach(function (q) {
+            var qIdx = joinedClass.questions.indexOf(q) + 1;
+            var r = joinedStudent.responses[q.id];
+            var ok = getEffectiveVerdict(r);
+            var hasOv = r.manualOverride !== null && r.manualOverride !== undefined;
+            histHtml +=
+              '<div class="history-item">' +
+                '<div style="display:flex; justify-content:space-between; align-items:center; gap:var(--space-sm);">' +
+                  '<span class="mono" style="font-size:0.75rem; font-weight:600;">Q' + qIdx + ' · ' + (ok ? '+' + q.points : '0') + ' pts</span>' +
+                  '<span class="' + (ok ? 'status-text-ok' : 'status-text-err') + '" style="font-size:0.8125rem;">' +
+                    (ok ? 'Correct' : 'Incorrect') + (hasOv ? ' (Override)' : '') +
+                  '</span>' +
+                '</div>' +
+                '<div class="helper-text">' + escapeHtml(formatAnswerDisplay(q, r.answer)) + '</div>' +
+              '</div>';
+          });
+          histHtml += '</div>';
+        }
+        histHtml += '</div>';
+        historyEl.innerHTML = histHtml;
+      }
+    }
+
+    function refreshIcons() {
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
+    }
+
+    /* ================================================================
+       App Initialization
+       ================================================================ */
+    async function initApp() {
+      try {
+        if (window.notebookAppApi && typeof window.notebookAppApi.getAppState === 'function') {
+          var saved = await window.notebookAppApi.getAppState();
+          if (saved && typeof saved === 'object' && Array.isArray(saved.classes) && saved.classes.length > 0) {
+            appState = saved;
+          }
+          if (window.notebookAppApi.clientType === 'notebooklm-mobile') {
+            appState.mobileDeviceSim = false;
+          }
+        }
+      } catch (err) {
+        appState = createInitialState();
+      }
+
+      renderAll();
+
+      if (window.notebookAppApi && typeof window.notebookAppApi.notifyAppReady === 'function') {
+        window.notebookAppApi.notifyAppReady();
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html>
